@@ -3,8 +3,8 @@
 ## 0. Punto de partida actual
 
 El repositorio hoy contiene un baseline de clasificacion por imagen en
-[ProyectoEcomision.ipynb](E:\Proyecto-DiseñoHTML\Proyecto_IA-Ecomision\ProyectoEcomision.ipynb),
-basado en `TensorFlow` + `MobileNetV2` + salida de 3 clases.
+`ProyectoEcomision.ipynb`, basado en `TensorFlow` + `MobileNetV2` + salida de
+3 clases.
 
 Ese baseline sirve como Fase 0, pero no cubre:
 
@@ -52,7 +52,7 @@ Construir una app Android con inferencia mayormente on-device que:
 6. Data Layer
 7. Telemetry/ModelOps Layer
 
-## 2. Stack recomendado
+## 2. Stack 
 
 | Capa | Tecnologia recomendada | Motivo |
 |---|---|---|
@@ -187,7 +187,7 @@ CameraX Preview + ImageAnalysis
 
 ### 6.1 Deteccion
 
-**Recomendacion MVP:** detector custom compatible con MediaPipe Object Detector.
+**MVP:** detector custom compatible con MediaPipe Object Detector.
 
 Clases del detector:
 
@@ -238,7 +238,7 @@ En vez de un unico clasificador de canecas, usar un modelo multi-head:
 - Head C: estado visual
 - Head D: cues binarios/multietiqueta
 
-#### Heads sugeridos
+#### Heads
 
 | Head | Salida |
 |---|---|
@@ -263,7 +263,7 @@ Eso evita errores como:
 - vaso limpio vs vaso con cafe
 - botella vacia vs botella con liquido
 
-## 7. Modelo recomendado para movil
+## 7. Modelo para movil
 
 ### Opcion principal para MVP
 
@@ -273,7 +273,7 @@ Eso evita errores como:
 | Segmentacion por toque | modelo compatible con MediaPipe Interactive Segmenter | aislamiento practico del objeto seleccionado |
 | Clasificacion multi-head | `MobileNetV3-Small` o `EfficientNet-Lite0` custom en LiteRT | buen balance entre precision y latencia |
 
-### Configuracion sugerida
+### Configuracion 
 
 - detector:
   - entrada `320x320`
@@ -283,7 +283,7 @@ Eso evita errores como:
   - version `int8` si el objetivo es gama media
   - version `fp16` si se usa GPU y la calidad lo justifica
 
-### Mi recomendacion concreta
+### Recopilacion Apk
 
 Para la primera APK funcional:
 
@@ -549,7 +549,7 @@ Agregar nuevas clases no obliga a reescribir la app; basta con:
 | `view_policy_dataset` | secuencias por tipo de objeto y vistas criticas |
 | `negative_dataset` | manos, mesas, ropa, sombras, fondos, objetos no residuo |
 
-### Recomendacion de volumen MVP
+### volumen MVP
 
 - detector: 800 a 1500 imagenes por familia principal, combinando publico + propio
 - clasificador/estado: 500 a 1000 crops por subtipo/estado importante
