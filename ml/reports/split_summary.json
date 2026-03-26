@@ -1,0 +1,7 @@
+{
+  "train": {
+    "plastic_bottle": 2
+  },
+  "val": {},
+  "test": {}
+}

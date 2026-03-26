@@ -1,0 +1,12 @@
+PyYAML>=6.0
+Pillow>=10.3
+numpy>=1.26
+pandas>=2.2
+scikit-learn>=1.5
+matplotlib>=3.9
+seaborn>=0.13
+tqdm>=4.66
+ultralytics>=8.3
+tensorflow>=2.16
+tensorflow-model-optimization>=0.8
+

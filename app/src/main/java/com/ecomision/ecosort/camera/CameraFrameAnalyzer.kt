@@ -18,7 +18,7 @@ class CameraFrameAnalyzer(
     @Volatile
     private var processing = false
     private var lastFrameMs = 0L
-    private val minIntervalMs = 350L
+    private val minIntervalMs = 250L
 
     override fun analyze(imageProxy: ImageProxy) {
         val now = System.currentTimeMillis()

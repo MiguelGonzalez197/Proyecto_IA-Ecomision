@@ -21,6 +21,7 @@ import androidx.core.content.ContextCompat
 import com.ecomision.ecosort.camera.CameraFrameAnalyzer
 import com.ecomision.ecosort.model.DetectionCandidate
 import java.util.concurrent.Executors
+import com.ecomision.ecosort.ui.theme.HeroGradient
 
 @Composable
 fun CameraPreview(
@@ -30,6 +31,7 @@ fun CameraPreview(
     imageWidth: Int,
     imageHeight: Int,
     selectedCandidateId: Long?,
+    interactionEnabled: Boolean,
     onCandidateTapped: (DetectionCandidate) -> Unit
 ) {
     val context = LocalContext.current
@@ -65,7 +67,7 @@ fun CameraPreview(
                 modifier = Modifier.fillMaxSize(),
                 factory = { ctx ->
                     PreviewView(ctx).apply {
-                        implementationMode = PreviewView.ImplementationMode.PERFORMANCE
+                        implementationMode = PreviewView.ImplementationMode.COMPATIBLE
                         scaleType = PreviewView.ScaleType.FILL_CENTER
                         controller = cameraController
                     }
@@ -78,14 +80,7 @@ fun CameraPreview(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(
-                        Brush.verticalGradient(
-                            listOf(
-                                Color(0xFFF5FBF7),
-                                Color(0xFFE7F3EC)
-                            )
-                        )
-                    )
+                    .background(HeroGradient)
             )
         }
 
@@ -94,6 +89,7 @@ fun CameraPreview(
             imageWidth = imageWidth,
             imageHeight = imageHeight,
             selectedCandidateId = selectedCandidateId,
+            interactionEnabled = interactionEnabled && hasPermission,
             onCandidateTapped = onCandidateTapped
         )
     }

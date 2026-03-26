@@ -1,0 +1,36 @@
+path: "E:\\Proyecto-Dise\xF1oHTML\\Proyecto_IA-Ecomision\\ml\\data\\processed\\detector_v1"
+train: images/train
+val: images/val
+test: images/test
+names:
+  0: plastic_bottle
+  1: plastic_container
+  2: yogurt_cup
+  3: ice_cream_tub
+  4: plastic_cup
+  5: coffee_cup
+  6: glass_bottle
+  7: glass_jar
+  8: can
+  9: cardboard
+  10: cardboard_box
+  11: pizza_box
+  12: paper_sheet
+  13: notebook
+  14: newspaper
+  15: napkin_clean
+  16: napkin_used
+  17: foam_tray
+  18: delivery_container
+  19: tetra_pak
+  20: plastic_bag
+  21: snack_bag
+  22: multilayer_package
+  23: aluminum_foil
+  24: disposable_cutlery
+  25: lid
+  26: fruit_peel
+  27: vegetable_scraps
+  28: mixed_organic
+  29: bone
+  30: coffee_filter

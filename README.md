@@ -369,3 +369,6 @@ Reemplazar:
 
 - Arquitectura Fase 1:
   - `docs/arquitectura_mvp_android.md`
+- Pipeline ML Fase 3:
+  - `docs/fase3_pipeline_ml.md`
+  - `ml/README.md`

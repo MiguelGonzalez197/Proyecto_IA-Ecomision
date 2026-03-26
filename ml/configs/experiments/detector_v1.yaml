@@ -1,0 +1,29 @@
+experiment_name: detector_v1
+task: detector
+framework: ultralytics
+base_model: yolo11n.pt
+dataset_yaml: ml/data/processed/detector_v1/data.yaml
+imgsz: 640
+epochs: 100
+batch: 16
+patience: 20
+device: auto
+workers: 4
+project: ml/reports/runs
+name: detector_v1
+save_period: 10
+augment:
+  hsv_h: 0.015
+  hsv_s: 0.7
+  hsv_v: 0.4
+  degrees: 10
+  translate: 0.1
+  scale: 0.2
+  shear: 2.0
+  perspective: 0.0
+  flipud: 0.0
+  fliplr: 0.5
+  mosaic: 0.5
+  mixup: 0.1
+  copy_paste: 0.0
+

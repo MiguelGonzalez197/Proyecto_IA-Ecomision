@@ -1,6 +1,7 @@
 package com.ecomision.ecosort.ui
 
 import android.graphics.Bitmap
+import android.graphics.RectF
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -13,20 +14,28 @@ import com.ecomision.ecosort.analysis.WasteHeuristicClassifier
 import com.ecomision.ecosort.camera.CameraFrameAnalyzer
 import com.ecomision.ecosort.camera.FrameAnalysisSnapshot
 import com.ecomision.ecosort.camera.WasteObjectDetector
+import com.ecomision.ecosort.model.BinRule
 import com.ecomision.ecosort.model.BinType
 import com.ecomision.ecosort.model.DetectionCandidate
 import com.ecomision.ecosort.model.EvidenceSlot
 import com.ecomision.ecosort.model.GuidedViewInstruction
 import com.ecomision.ecosort.model.ScanSession
+import com.ecomision.ecosort.model.UncertaintyDecision
 import com.ecomision.ecosort.model.WasteAnalysis
 import com.ecomision.ecosort.model.WasteCategory
 import com.ecomision.ecosort.repository.CatalogRepository
 import com.ecomision.ecosort.repository.ScanHistoryRepository
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlin.math.hypot
+import kotlin.math.max
 
 class ScannerViewModel(
     private val catalogRepository: CatalogRepository,
@@ -41,21 +50,33 @@ class ScannerViewModel(
 
     private val _uiState = MutableStateFlow(ScannerUiState())
     val uiState: StateFlow<ScannerUiState> = _uiState.asStateFlow()
+    val history = scanHistoryRepository.observeRecent()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),
+            initialValue = emptyList()
+        )
 
     private var latestFrameBitmap: Bitmap? = null
     private var latestDetections: List<DetectionCandidate> = emptyList()
     private var selectedCandidate: DetectionCandidate? = null
+    private var selectedCandidateAnchor: RectF? = null
     private var scanSession: ScanSession? = null
+    private var cachedCatalog: List<WasteCategory> = emptyList()
+    private var cachedRules: List<BinRule> = emptyList()
+    private var analysisJob: Job? = null
+    private var analysisRequestId: Long = 0L
 
     val frameAnalyzer = CameraFrameAnalyzer(wasteObjectDetector, ::onFrameSnapshot)
 
     init {
         viewModelScope.launch {
             catalogRepository.seedIfNeeded()
+            cachedCatalog = catalogRepository.getCategories()
+            cachedRules = catalogRepository.getRules()
             _uiState.update {
                 it.copy(
-                    detectorWarmupMessage = null,
-                    statusMessage = "Toca uno de los residuos detectados para iniciar el analisis."
+                    statusMessage = "Apunta la camara hacia un residuo para empezar."
                 )
             }
         }
@@ -64,148 +85,190 @@ class ScannerViewModel(
     fun onFrameSnapshot(snapshot: FrameAnalysisSnapshot) {
         latestFrameBitmap = snapshot.bitmap
         latestDetections = snapshot.detections
-        val currentlySelectedId = _uiState.value.selectedCandidateId
-        val refreshedSelected = currentlySelectedId?.let { id ->
-            snapshot.detections.firstOrNull { it.id == id }
-        }
+        val currentState = _uiState.value
+        val refreshedSelected = currentState.selectedCandidateId?.let { resolveSelectedCandidate(it, snapshot.detections) }
         if (refreshedSelected != null) {
-            selectedCandidate = refreshedSelected
+            rememberSelection(refreshedSelected)
         }
 
-        _uiState.update {
-            it.copy(
+        _uiState.update { state ->
+            state.copy(
                 detections = snapshot.detections,
                 imageWidth = snapshot.imageWidth,
                 imageHeight = snapshot.imageHeight,
-                detectorWarmupMessage = if (snapshot.detections.isEmpty()) it.detectorWarmupMessage else null,
+                selectedCandidateId = refreshedSelected?.id ?: state.selectedCandidateId,
                 statusMessage = when {
-                    currentlySelectedId != null && refreshedSelected == null ->
-                        "Objeto fuera de cuadro. Reencuadra el residuo seleccionado."
+                    state.isAnalyzing && state.selectedCandidateId != null ->
+                        "Clasificando el objeto seleccionado..."
 
-                    currentlySelectedId != null ->
-                        it.statusMessage
+                    state.selectedCandidateId != null && refreshedSelected == null ->
+                        "Ajusta el encuadre y vuelve a tocar el objeto para clasificarlo."
 
-                    snapshot.detections.isEmpty() ->
-                        "Buscando residuos en escena..."
+                    snapshot.detections.isNotEmpty() && state.currentInstruction != null ->
+                        "Ajusta la vista si quieres afinar el resultado o toca otro objeto."
+
+                    snapshot.detections.isNotEmpty() && state.currentResult != null ->
+                        "Toca otro objeto destacado para clasificarlo."
+
+                    snapshot.detections.isNotEmpty() ->
+                        "Toca uno de los objetos marcados para clasificarlo."
 
                     else ->
-                        "Se detectaron ${snapshot.detections.size} residuos potenciales. Toca uno para analizar."
+                        buildIdleStatusMessage(snapshot.sceneHint)
                 }
             )
         }
     }
 
     fun onCandidateSelected(candidate: DetectionCandidate) {
-        selectedCandidate = candidate
-        scanSession = ScanSession(candidateId = candidate.id)
+        val continuingSession = shouldContinueSession(candidate)
+        cancelActiveAnalysis()
+        rememberSelection(candidate)
+
+        if (!continuingSession) {
+            scanSession = ScanSession(candidateId = candidate.id)
+        }
+
         _uiState.update {
             it.copy(
                 selectedCandidateId = candidate.id,
-                currentResult = null,
-                currentInstruction = null,
-                roundsCompleted = 0,
+                currentResult = if (continuingSession) it.currentResult else null,
+                currentInstruction = if (continuingSession) it.currentInstruction else null,
+                sessionSummary = if (continuingSession) it.sessionSummary else "",
                 isAnalyzing = true,
-                statusMessage = "Analizando vista inicial del residuo..."
+                statusMessage = if (continuingSession) {
+                    "Reanalizando el objeto con la nueva vista..."
+                } else {
+                    "Clasificando el objeto seleccionado..."
+                }
             )
         }
-        analyzeSelection(slot = EvidenceSlot.OUTER_FULL)
-    }
 
-    fun captureGuidedView() {
-        val instruction = _uiState.value.currentInstruction ?: return
-        _uiState.update {
-            it.copy(
-                isAnalyzing = true,
-                statusMessage = "Reanalizando con la vista guiada solicitada..."
-            )
+        val slot = if (continuingSession) {
+            _uiState.value.currentInstruction?.slot ?: EvidenceSlot.OUTER_FULL
+        } else {
+            EvidenceSlot.OUTER_FULL
         }
-        analyzeSelection(slot = instruction.slot)
+        analyzeSelection(slot = slot)
     }
 
     fun clearSelection() {
+        cancelActiveAnalysis()
         selectedCandidate = null
+        selectedCandidateAnchor = null
         scanSession = null
         _uiState.update {
             it.copy(
                 selectedCandidateId = null,
                 currentResult = null,
                 currentInstruction = null,
-                roundsCompleted = 0,
-                statusMessage = "Selecciona otro residuo para analizar."
+                sessionSummary = "",
+                isAnalyzing = false,
+                statusMessage = buildIdleStatusMessage()
             )
         }
     }
 
     private fun analyzeSelection(slot: EvidenceSlot) {
-        viewModelScope.launch {
-            val frameBitmap = latestFrameBitmap
-            val candidate = selectedCandidate
-            if (frameBitmap == null || candidate == null) {
+        val requestId = startAnalysisRequest()
+        analysisJob = viewModelScope.launch {
+            try {
+                val frameBitmap = latestFrameBitmap
+                val candidate = resolveCandidateForAnalysis()
+                if (frameBitmap == null || candidate == null) {
+                    if (!isLatestAnalysis(requestId)) return@launch
+                    _uiState.update {
+                        it.copy(
+                            selectedCandidateId = null,
+                            isAnalyzing = false,
+                            statusMessage = "No pude aislar el objeto. Acercate y vuelve a tocarlo."
+                        )
+                    }
+                    return@launch
+                }
+
+                val catalog = getCatalog()
+                val rules = getRules()
+                val isolated = isolationEngine.isolate(frameBitmap, candidate.boundingBox)
+                val observation = classifier.analyze(
+                    bitmap = isolated.bitmap,
+                    detection = candidate,
+                    slot = slot,
+                    catalog = catalog
+                )
+
+                val updatedSession = (scanSession ?: ScanSession(candidate.id)).add(observation)
+                val dominantCategory = resolveDominantCategory(updatedSession, catalog, observation.categoryId)
+                val decision = binRuleEngine.decide(dominantCategory, updatedSession, rules)
+                val uncertainty = uncertaintyEngine.evaluate(dominantCategory, updatedSession)
+                val guidanceInstruction = guidanceFor(uncertainty, updatedSession, dominantCategory)
+                val result = WasteAnalysis(
+                    category = dominantCategory,
+                    probableBin = if (decision.binType == BinType.UNKNOWN) {
+                        dominantCategory?.defaultBin ?: BinType.BLACK
+                    } else {
+                        decision.binType
+                    },
+                    confidence = uncertainty.confidence,
+                    reason = decision.reason,
+                    evidenceUsed = buildList {
+                        addAll(decision.evidenceSummary)
+                        addAll(observation.explanationTokens.take(3))
+                    },
+                    warning = uncertainty.warning,
+                    nextInstruction = guidanceInstruction,
+                    needsMoreEvidence = guidanceInstruction != null
+                )
+
+                if (!isLatestAnalysis(requestId)) return@launch
+                scanSession = updatedSession
+                selectedCandidate = null
                 _uiState.update {
                     it.copy(
+                        selectedCandidateId = null,
                         isAnalyzing = false,
-                        statusMessage = "No hay una vista valida del residuo. Reencuadra e intenta otra vez."
+                        currentResult = result,
+                        currentInstruction = guidanceInstruction,
+                        sessionSummary = buildSessionSummary(updatedSession, dominantCategory),
+                        statusMessage = if (guidanceInstruction != null) {
+                            "Clasificacion tentativa lista. Ajusta la vista y toca de nuevo si quieres afinarla."
+                        } else {
+                            "Clasificacion lista. Toca otro objeto para continuar."
+                        }
                     )
                 }
-                return@launch
-            }
 
-            val catalog = catalogRepository.getCategories()
-            val rules = catalogRepository.getRules()
-            val isolated = isolationEngine.isolate(frameBitmap, candidate.boundingBox)
-            val observation = classifier.analyze(
-                bitmap = isolated.bitmap,
-                detection = candidate,
-                slot = slot,
-                catalog = catalog
-            )
-
-            val updatedSession = (scanSession ?: ScanSession(candidate.id)).add(observation)
-            scanSession = updatedSession
-
-            val dominantCategory = resolveDominantCategory(updatedSession, catalog, observation.categoryId)
-            val decision = binRuleEngine.decide(dominantCategory, updatedSession, rules)
-            val uncertainty = uncertaintyEngine.evaluate(dominantCategory, updatedSession)
-            val shouldAskForMore = !uncertainty.isCertain && updatedSession.observations.size < 3
-            val nextInstruction = if (shouldAskForMore) {
-                guidedViewPlanner.plan(dominantCategory, updatedSession, uncertainty.missingSlots)
-            } else {
-                null
-            }
-
-            val result = WasteAnalysis(
-                category = dominantCategory,
-                probableBin = if (decision.binType == BinType.UNKNOWN) dominantCategory?.defaultBin ?: BinType.BLACK else decision.binType,
-                confidence = uncertainty.confidence,
-                reason = decision.reason,
-                evidenceUsed = buildList {
-                    addAll(decision.evidenceSummary)
-                    addAll(observation.explanationTokens.take(3))
-                },
-                warning = if (shouldAskForMore) uncertainty.warning else uncertainty.warning?.takeIf { !uncertainty.isCertain },
-                nextInstruction = nextInstruction,
-                needsMoreEvidence = shouldAskForMore
-            )
-
-            _uiState.update {
-                it.copy(
-                    isAnalyzing = false,
-                    currentResult = result,
-                    currentInstruction = nextInstruction,
-                    roundsCompleted = updatedSession.observations.size,
-                    sessionSummary = buildSessionSummary(updatedSession, dominantCategory),
-                    statusMessage = if (shouldAskForMore) {
-                        "Necesito otra vista antes de confirmar la caneca."
-                    } else {
-                        "Analisis completado."
-                    }
-                )
-            }
-
-            if (!shouldAskForMore) {
-                scanHistoryRepository.save(result)
+                if (isLatestAnalysis(requestId)) {
+                    scanHistoryRepository.save(result)
+                }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Throwable) {
+                if (!isLatestAnalysis(requestId)) return@launch
+                _uiState.update {
+                    it.copy(
+                        selectedCandidateId = null,
+                        isAnalyzing = false,
+                        statusMessage = "No pude clasificar esta vista. Mejora el encuadre y vuelve a tocar el objeto."
+                    )
+                }
             }
         }
+    }
+
+    private fun guidanceFor(
+        uncertainty: UncertaintyDecision,
+        session: ScanSession,
+        category: WasteCategory?
+    ): GuidedViewInstruction? {
+        val lowConfidence = uncertainty.confidence < 0.58f
+        val needsAnotherAngle = uncertainty.missingSlots.isNotEmpty() && session.observations.size < 2
+        if (!lowConfidence && !needsAnotherAngle) return null
+        return guidedViewPlanner.plan(
+            category = category,
+            session = session,
+            missingSlots = uncertainty.missingSlots
+        )
     }
 
     private fun resolveDominantCategory(
@@ -222,15 +285,119 @@ class ScannerViewModel(
         return catalog.firstOrNull { it.id == bestId }
     }
 
-    private fun buildSessionSummary(session: ScanSession, category: WasteCategory?): String {
+    private fun buildSessionSummary(
+        session: ScanSession,
+        category: WasteCategory?
+    ): String {
         val observedSlots = session.completedSlots.joinToString { it.name.lowercase() }
         return buildString {
-            append("Categoria dominante: ${category?.displayName ?: "No confirmada"}. ")
-            append("Vistas analizadas: $observedSlots.")
+            append("Tipo estimado: ${category?.displayName ?: "No confirmado"}. ")
+            append("Vistas usadas: ${observedSlots.ifBlank { "vista principal" }}.")
         }
     }
 
+    private fun rememberSelection(candidate: DetectionCandidate) {
+        selectedCandidate = candidate
+        selectedCandidateAnchor = RectF(candidate.boundingBox)
+    }
+
+    private fun shouldContinueSession(candidate: DetectionCandidate): Boolean {
+        val currentInstruction = _uiState.value.currentInstruction ?: return false
+        val currentSession = scanSession ?: return false
+        if (currentInstruction.slot in currentSession.completedSlots) return false
+        val anchor = selectedCandidateAnchor ?: return false
+        return currentSession.candidateId == candidate.id || selectionScore(anchor, candidate.boundingBox) > 0.34f
+    }
+
+    private fun resolveCandidateForAnalysis(): DetectionCandidate? {
+        val selectedId = _uiState.value.selectedCandidateId ?: selectedCandidate?.id ?: return null
+        val liveCandidate = resolveSelectedCandidate(selectedId, latestDetections) ?: return null
+        rememberSelection(liveCandidate)
+        if (_uiState.value.selectedCandidateId != liveCandidate.id) {
+            _uiState.update { it.copy(selectedCandidateId = liveCandidate.id) }
+        }
+        return liveCandidate
+    }
+
+    private fun resolveSelectedCandidate(
+        selectedId: Long,
+        detections: List<DetectionCandidate>
+    ): DetectionCandidate? {
+        detections.firstOrNull { it.id == selectedId }?.let { return it }
+        val anchor = selectedCandidateAnchor ?: selectedCandidate?.boundingBox ?: return null
+        return detections
+            .map { candidate -> candidate to selectionScore(anchor, candidate.boundingBox) }
+            .filter { (_, score) -> score > 0.18f }
+            .maxByOrNull { it.second }
+            ?.first
+    }
+
+    private fun selectionScore(anchor: RectF, candidate: RectF): Float {
+        val overlap = intersectionOverUnion(anchor, candidate)
+        val centerDistance = hypot(
+            (anchor.centerX() - candidate.centerX()).toDouble(),
+            (anchor.centerY() - candidate.centerY()).toDouble()
+        ).toFloat()
+        val distanceThreshold = max(
+            max(anchor.width(), anchor.height()),
+            max(candidate.width(), candidate.height())
+        ).coerceAtLeast(1f) * 2f
+        val distanceScore = 1f - (centerDistance / distanceThreshold).coerceIn(0f, 1f)
+        return overlap * 0.75f + distanceScore * 0.25f
+    }
+
+    private fun intersectionOverUnion(first: RectF, second: RectF): Float {
+        val intersectionLeft = max(first.left, second.left)
+        val intersectionTop = max(first.top, second.top)
+        val intersectionRight = minOf(first.right, second.right)
+        val intersectionBottom = minOf(first.bottom, second.bottom)
+        val intersectionWidth = (intersectionRight - intersectionLeft).coerceAtLeast(0f)
+        val intersectionHeight = (intersectionBottom - intersectionTop).coerceAtLeast(0f)
+        val intersectionArea = intersectionWidth * intersectionHeight
+        if (intersectionArea <= 0f) return 0f
+
+        val firstArea = first.width().coerceAtLeast(0f) * first.height().coerceAtLeast(0f)
+        val secondArea = second.width().coerceAtLeast(0f) * second.height().coerceAtLeast(0f)
+        val unionArea = (firstArea + secondArea - intersectionArea).coerceAtLeast(1f)
+        return (intersectionArea / unionArea).coerceIn(0f, 1f)
+    }
+
+    private fun buildIdleStatusMessage(
+        sceneHint: String? = null
+    ): String {
+        return sceneHint ?: "Apunta la camara hacia un residuo."
+    }
+
+    private suspend fun getCatalog(): List<WasteCategory> {
+        if (cachedCatalog.isEmpty()) {
+            cachedCatalog = catalogRepository.getCategories()
+        }
+        return cachedCatalog
+    }
+
+    private suspend fun getRules(): List<BinRule> {
+        if (cachedRules.isEmpty()) {
+            cachedRules = catalogRepository.getRules()
+        }
+        return cachedRules
+    }
+
+    private fun startAnalysisRequest(): Long {
+        analysisJob?.cancel()
+        analysisRequestId += 1
+        return analysisRequestId
+    }
+
+    private fun cancelActiveAnalysis() {
+        analysisJob?.cancel()
+        analysisJob = null
+        analysisRequestId += 1
+    }
+
+    private fun isLatestAnalysis(requestId: Long): Boolean = requestId == analysisRequestId
+
     override fun onCleared() {
+        cancelActiveAnalysis()
         frameAnalyzer.shutdown()
         super.onCleared()
     }

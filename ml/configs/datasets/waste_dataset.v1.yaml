@@ -1,0 +1,64 @@
+version: waste-dataset-v1
+manifest_format: jsonl
+manifest_path: ml/data/raw/master_manifest.jsonl
+
+image_record_fields:
+  - image_id
+  - image_path
+  - width
+  - height
+  - capture_session_id
+  - scene_id
+  - location_id
+  - device_id
+  - lighting
+  - distance
+  - background_complexity
+  - hand_present
+  - split_group
+  - tags
+  - instances
+
+instance_fields:
+  - instance_id
+  - object_id
+  - bbox_xyxy
+  - polygon
+  - object_class
+  - material_primary
+  - material_secondary
+  - state_cleanliness
+  - state_wetness
+  - state_food_residue
+  - state_liquid
+  - deformation
+  - visible_part
+  - interior_visible
+  - food_present
+  - liquid_present
+  - background_complexity
+  - occlusion
+  - hand_present
+  - target_bin
+  - ambiguity
+  - view_slot
+  - detector_ignore
+  - classifier_ignore
+  - notes
+
+split_strategy:
+  group_key: split_group
+  ratios:
+    train: 0.70
+    val: 0.15
+    test: 0.15
+  stratify_by:
+    - object_class
+    - target_bin
+
+bias_controls:
+  require_background_diversity: true
+  require_hand_presence_balance: true
+  require_locations_per_class: 3
+  forbid_same_object_across_splits: true
+  max_single_location_share: 0.35

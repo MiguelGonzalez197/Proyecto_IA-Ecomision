@@ -1,0 +1,12 @@
+{
+  "images": 2,
+  "instances": 2,
+  "errors": [],
+  "warnings": [],
+  "class_distribution": {
+    "plastic_bottle": 2
+  },
+  "target_bin_distribution": {
+    "BLACK": 2
+  }
+}

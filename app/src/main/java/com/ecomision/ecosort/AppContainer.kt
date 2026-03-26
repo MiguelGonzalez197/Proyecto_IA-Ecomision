@@ -39,7 +39,7 @@ class AppContainer(context: Context) {
 
     val wasteObjectDetector by lazy { MlKitWasteObjectDetector() }
     val isolationEngine by lazy { BoundingBoxIsolationEngine() }
-    val classifier by lazy { WasteHeuristicClassifier(appContext) }
+    val classifier by lazy { WasteHeuristicClassifier() }
     val binRuleEngine by lazy { BinRuleEngine() }
     val uncertaintyEngine by lazy { UncertaintyEngine() }
     val guidedViewPlanner by lazy { GuidedViewPlanner() }

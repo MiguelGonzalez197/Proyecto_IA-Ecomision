@@ -1,0 +1,1 @@
+crop_path,image_id,instance_id,object_id,split_group,object_class,material_primary,state_cleanliness,state_wetness,state_food_residue,state_liquid,deformation,visible_part,interior_visible,food_present,liquid_present,background_complexity,occlusion,hand_present,target_bin,ambiguity,view_slot

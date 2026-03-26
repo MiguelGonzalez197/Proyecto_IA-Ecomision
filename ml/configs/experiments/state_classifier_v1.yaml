@@ -1,0 +1,25 @@
+experiment_name: state_classifier_v1
+task: classifier
+framework: tensorflow
+backbone: MobileNetV3Small
+input_size: [224, 224]
+batch_size: 32
+epochs: 40
+learning_rate: 0.0003
+weight_decay: 0.00001
+mixed_precision: false
+dataset_csv_root: ml/data/processed/classifier_v1
+train_csv: ml/data/processed/classifier_v1/train.csv
+val_csv: ml/data/processed/classifier_v1/val.csv
+test_csv: ml/data/processed/classifier_v1/test.csv
+outputs:
+  model_dir: ml/reports/models/state_classifier_v1
+heads:
+  object_class: true
+  material_primary: true
+  state_cleanliness: true
+  state_wetness: true
+  state_food_residue: true
+  state_liquid: true
+  target_bin: true
+

@@ -8,6 +8,6 @@ data class FrameAnalysisSnapshot(
     val imageHeight: Int,
     val detections: List<DetectionCandidate>,
     val bitmap: Bitmap?,
-    val timestampMs: Long
+    val timestampMs: Long,
+    val sceneHint: String? = null
 )
-

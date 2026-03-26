@@ -1,0 +1,293 @@
+version: waste-taxonomy-v1
+
+label_spaces:
+  material_primary:
+    - PET
+    - HDPE
+    - PP
+    - PS
+    - EPS
+    - PAPER
+    - CARDBOARD
+    - GLASS
+    - ALUMINUM
+    - STEEL
+    - MULTILAYER
+    - TETRA_PAK
+    - ORGANIC
+    - MIXED
+    - UNKNOWN
+  state_cleanliness:
+    - clean
+    - lightly_soiled
+    - contaminated
+    - uncertain
+  state_wetness:
+    - dry
+    - humid
+    - wet
+    - uncertain
+  state_food_residue:
+    - none
+    - trace
+    - visible
+    - heavy
+    - uncertain
+  state_liquid:
+    - none
+    - drops
+    - visible
+    - pooled
+    - uncertain
+  deformation:
+    - none
+    - slight
+    - folded
+    - crushed
+    - wrinkled
+    - torn
+  visible_part:
+    - outer_full
+    - inner_view
+    - opening_neck
+    - bottom_view
+    - back_side
+    - both_faces
+    - close_texture
+    - partial
+  background_complexity:
+    - simple
+    - medium
+    - complex
+  occlusion:
+    - none
+    - partial
+    - severe
+  ambiguity:
+    - low
+    - medium
+    - high
+  target_bin:
+    - WHITE
+    - BLACK
+    - GREEN
+
+object_classes:
+  - id: plastic_bottle
+    display_name: Botella plastica
+    detector_group: rigid_plastic
+    material_candidates: [PET, HDPE]
+    likely_bins: [WHITE, BLACK]
+    required_view_slots: [outer_full, opening_neck, inner_view, bottom_view]
+    ambiguity_triggers: [transparent_liquid, sticky_residue, partial_view]
+  - id: plastic_container
+    display_name: Envase plastico
+    detector_group: rigid_plastic
+    material_candidates: [PP, PET, HDPE]
+    likely_bins: [WHITE, BLACK]
+    required_view_slots: [outer_full, inner_view, back_side]
+    ambiguity_triggers: [sauce_residue, greasy_corners]
+  - id: yogurt_cup
+    display_name: Envase de yogur
+    detector_group: rigid_plastic
+    material_candidates: [PP, PS]
+    likely_bins: [WHITE, BLACK]
+    required_view_slots: [outer_full, inner_view, rim_closeup]
+    ambiguity_triggers: [residue_inside, foil_lid]
+  - id: ice_cream_tub
+    display_name: Tarro de helado
+    detector_group: rigid_plastic
+    material_candidates: [PP, PAPER]
+    likely_bins: [WHITE, BLACK]
+    required_view_slots: [outer_full, inner_view, bottom_view]
+    ambiguity_triggers: [sticky_residue, mixed_material]
+  - id: plastic_cup
+    display_name: Vaso plastico
+    detector_group: disposable_foodware
+    material_candidates: [PP, PET, PS]
+    likely_bins: [WHITE, BLACK]
+    required_view_slots: [outer_full, inner_view, bottom_view]
+    ambiguity_triggers: [liquid_inside, foam, coffee_stain]
+  - id: coffee_cup
+    display_name: Vaso de cafe
+    detector_group: disposable_foodware
+    material_candidates: [PAPER, MIXED]
+    likely_bins: [WHITE, BLACK]
+    required_view_slots: [outer_full, inner_view, rim_closeup, bottom_view]
+    ambiguity_triggers: [dark_interior, foam, lid_present]
+  - id: glass_bottle
+    display_name: Botella de vidrio
+    detector_group: glass
+    material_candidates: [GLASS]
+    likely_bins: [WHITE, BLACK]
+    required_view_slots: [outer_full, opening_neck, inner_view, bottom_view]
+    ambiguity_triggers: [transparent_liquid, reflections]
+  - id: glass_jar
+    display_name: Frasco de vidrio
+    detector_group: glass
+    material_candidates: [GLASS]
+    likely_bins: [WHITE, BLACK]
+    required_view_slots: [outer_full, opening_neck, inner_view, bottom_view]
+    ambiguity_triggers: [sticky_residue, reflections]
+  - id: can
+    display_name: Lata
+    detector_group: metal
+    material_candidates: [ALUMINUM, STEEL]
+    likely_bins: [WHITE, BLACK]
+    required_view_slots: [outer_full, opening_neck, bottom_view]
+    ambiguity_triggers: [liquid_inside, oily_residue]
+  - id: cardboard
+    display_name: Carton
+    detector_group: cardboard
+    material_candidates: [CARDBOARD]
+    likely_bins: [WHITE, BLACK]
+    required_view_slots: [outer_full, back_side, close_texture]
+    ambiguity_triggers: [grease_stain, humidity, mold]
+  - id: cardboard_box
+    display_name: Caja de carton
+    detector_group: cardboard
+    material_candidates: [CARDBOARD]
+    likely_bins: [WHITE, BLACK]
+    required_view_slots: [outer_full, inner_view, back_side]
+    ambiguity_triggers: [food_residue, humidity]
+  - id: pizza_box
+    display_name: Caja de pizza
+    detector_group: cardboard
+    material_candidates: [CARDBOARD]
+    likely_bins: [WHITE, BLACK]
+    required_view_slots: [outer_full, inner_view, bottom_view]
+    ambiguity_triggers: [grease_stain, cheese_residue]
+  - id: paper_sheet
+    display_name: Papel
+    detector_group: paper
+    material_candidates: [PAPER]
+    likely_bins: [WHITE, BLACK]
+    required_view_slots: [outer_full, both_faces, close_texture]
+    ambiguity_triggers: [wet_spot, food_stain]
+  - id: notebook
+    display_name: Cuaderno
+    detector_group: paper
+    material_candidates: [PAPER, MIXED]
+    likely_bins: [WHITE, BLACK]
+    required_view_slots: [outer_full, both_faces]
+    ambiguity_triggers: [spiral_metal, food_stain]
+  - id: newspaper
+    display_name: Periodico
+    detector_group: paper
+    material_candidates: [PAPER]
+    likely_bins: [WHITE, BLACK]
+    required_view_slots: [outer_full, both_faces]
+    ambiguity_triggers: [wet_spot, ink_transfer]
+  - id: napkin_clean
+    display_name: Servilleta limpia
+    detector_group: sanitary_paper
+    material_candidates: [PAPER]
+    likely_bins: [WHITE, BLACK]
+    required_view_slots: [outer_full, both_faces, close_texture]
+    ambiguity_triggers: [small_stain, humidity]
+  - id: napkin_used
+    display_name: Servilleta usada
+    detector_group: sanitary_paper
+    material_candidates: [PAPER]
+    likely_bins: [BLACK]
+    required_view_slots: [outer_full, both_faces, close_texture]
+    ambiguity_triggers: [food_stain, humidity]
+  - id: foam_tray
+    display_name: Bandeja de icopor
+    detector_group: foam
+    material_candidates: [EPS]
+    likely_bins: [BLACK, WHITE]
+    required_view_slots: [outer_full, inner_view, bottom_view]
+    ambiguity_triggers: [meat_residue, blood_stain, local_policy]
+  - id: delivery_container
+    display_name: Recipiente de domicilio
+    detector_group: disposable_foodware
+    material_candidates: [PP, PAPER, MIXED]
+    likely_bins: [WHITE, BLACK]
+    required_view_slots: [outer_full, inner_view, hinge_view]
+    ambiguity_triggers: [grease, sauce_residue, mixed_material]
+  - id: tetra_pak
+    display_name: Tetra Pak
+    detector_group: multilayer
+    material_candidates: [TETRA_PAK]
+    likely_bins: [WHITE, BLACK]
+    required_view_slots: [outer_full, opening_neck, inner_view]
+    ambiguity_triggers: [liquid_inside, folded_closed]
+  - id: plastic_bag
+    display_name: Bolsa plastica
+    detector_group: flexible_plastic
+    material_candidates: [HDPE, PP]
+    likely_bins: [WHITE, BLACK]
+    required_view_slots: [outer_full, both_faces, unfolded_view]
+    ambiguity_triggers: [attached_residue, wrinkles]
+  - id: snack_bag
+    display_name: Bolsa de snacks
+    detector_group: multilayer
+    material_candidates: [MULTILAYER]
+    likely_bins: [BLACK]
+    required_view_slots: [outer_full, both_faces, unfolded_view]
+    ambiguity_triggers: [food_residue, reflections]
+  - id: multilayer_package
+    display_name: Empaque multicapa
+    detector_group: multilayer
+    material_candidates: [MULTILAYER]
+    likely_bins: [BLACK]
+    required_view_slots: [outer_full, inner_view, unfolded_view]
+    ambiguity_triggers: [food_residue, mixed_layers]
+  - id: aluminum_foil
+    display_name: Papel aluminio
+    detector_group: metal
+    material_candidates: [ALUMINUM]
+    likely_bins: [WHITE, BLACK]
+    required_view_slots: [outer_full, both_faces, close_texture]
+    ambiguity_triggers: [oil, wrinkled_surface]
+  - id: disposable_cutlery
+    display_name: Cubiertos desechables
+    detector_group: disposable_foodware
+    material_candidates: [PP, PS, PAPER]
+    likely_bins: [WHITE, BLACK]
+    required_view_slots: [outer_full, both_faces, close_texture]
+    ambiguity_triggers: [food_residue]
+  - id: lid
+    display_name: Tapa
+    detector_group: rigid_plastic
+    material_candidates: [PP, HDPE, STEEL]
+    likely_bins: [WHITE, BLACK]
+    required_view_slots: [outer_full, both_faces]
+    ambiguity_triggers: [sticky_residue]
+  - id: fruit_peel
+    display_name: Cascara de fruta
+    detector_group: organic
+    material_candidates: [ORGANIC]
+    likely_bins: [GREEN]
+    required_view_slots: [outer_full, close_texture]
+    ambiguity_triggers: [mixed_with_packaging]
+  - id: vegetable_scraps
+    display_name: Restos de verduras
+    detector_group: organic
+    material_candidates: [ORGANIC]
+    likely_bins: [GREEN]
+    required_view_slots: [outer_full, close_texture]
+    ambiguity_triggers: [mixed_with_packaging]
+  - id: mixed_organic
+    display_name: Organico mezclado
+    detector_group: organic
+    material_candidates: [ORGANIC, MIXED]
+    likely_bins: [GREEN, BLACK]
+    required_view_slots: [outer_full, close_texture]
+    ambiguity_triggers: [packaging_mixed, sauce_container]
+  - id: bone
+    display_name: Hueso
+    detector_group: organic
+    material_candidates: [ORGANIC]
+    likely_bins: [GREEN]
+    required_view_slots: [outer_full, close_texture]
+    ambiguity_triggers: [partial_view]
+  - id: coffee_filter
+    display_name: Filtro de cafe
+    detector_group: sanitary_paper
+    material_candidates: [PAPER, ORGANIC]
+    likely_bins: [BLACK, GREEN]
+    required_view_slots: [outer_full, close_texture]
+    ambiguity_triggers: [wet_pulp, coffee_residue, local_policy]
+

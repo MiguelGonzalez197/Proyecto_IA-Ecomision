@@ -1,66 +1,82 @@
 [
   {
-    "id": "organic_to_green",
+    "id": "organic_visible",
     "categoryId": "*",
     "priority": 100,
     "conditions": "organic_confident",
     "binType": "GREEN",
-    "reason": "El objeto se comporta como residuo organico visible."
+    "reason": "Residuo organico claramente visible."
   },
   {
-    "id": "liquid_to_black",
+    "id": "mixed_organic_requires_check",
+    "categoryId": "*",
+    "priority": 98,
+    "conditions": "organic_confident",
+    "binType": "GREEN",
+    "reason": "Organico mezclado requiere inspeccion de textura y empaque cercano."
+  },
+  {
+    "id": "visible_liquid_black",
     "categoryId": "*",
     "priority": 95,
     "conditions": "visible_liquid",
     "binType": "BLACK",
-    "reason": "Tiene liquido visible o remanente."
+    "reason": "Hay liquido visible o remanente."
   },
   {
-    "id": "strong_food_residue_to_black",
+    "id": "heavy_food_residue_black",
     "categoryId": "*",
     "priority": 94,
     "conditions": "strong_food_residue",
     "binType": "BLACK",
-    "reason": "Presenta restos de comida o contaminacion fuerte."
+    "reason": "Hay restos de comida o contaminacion fuerte."
   },
   {
-    "id": "grease_to_black",
-    "categoryId": "pizza_box",
+    "id": "greasy_cardboard_black",
+    "categoryId": "*",
     "priority": 93,
     "conditions": "grease_visible",
     "binType": "BLACK",
-    "reason": "La caja muestra grasa o restos adheridos."
+    "reason": "El carton se ve grasoso o muy contaminado."
   },
   {
-    "id": "sanitary_to_black",
-    "categoryId": "napkin",
+    "id": "used_napkin_black",
+    "categoryId": "*",
     "priority": 92,
     "conditions": "used_or_wet",
     "binType": "BLACK",
-    "reason": "Las servilletas usadas o humedas van a caneca negra."
+    "reason": "Las servilletas usadas van a caneca negra."
   },
   {
-    "id": "clean_dry_to_white",
+    "id": "dry_clean_recyclable_white",
     "categoryId": "*",
     "priority": 70,
     "conditions": "clean_and_dry",
     "binType": "WHITE",
-    "reason": "Se ve vacio, limpio y seco."
+    "reason": "El residuo se ve vacio, limpio y seco."
   },
   {
-    "id": "tetra_to_white_if_drained",
-    "categoryId": "tetra_pak",
+    "id": "drained_tetra_pak_white",
+    "categoryId": "*",
     "priority": 69,
     "conditions": "clean_and_drained",
     "binType": "WHITE",
     "reason": "El Tetra Pak parece vacio y drenado."
   },
   {
-    "id": "default_conservative",
+    "id": "multilayer_black",
     "categoryId": "*",
-    "priority": 5,
+    "priority": 68,
     "conditions": "default",
     "binType": "BLACK",
-    "reason": "Sin evidencia suficiente, el sistema usa una recomendacion conservadora."
+    "reason": "Los empaques multicapa y metalizados van por defecto a caneca negra."
+  },
+  {
+    "id": "fallback_black",
+    "categoryId": "*",
+    "priority": 1,
+    "conditions": "default",
+    "binType": "BLACK",
+    "reason": "Falta evidencia suficiente; se usa recomendacion conservadora."
   }
 ]

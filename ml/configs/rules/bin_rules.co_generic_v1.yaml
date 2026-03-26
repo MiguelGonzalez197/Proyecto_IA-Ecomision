@@ -1,0 +1,82 @@
+version: co-generic-v1
+default_conservative_bin: BLACK
+
+rules:
+  - id: organic_visible
+    priority: 100
+    when:
+      any_class_in: [fruit_peel, vegetable_scraps, bone]
+      min_organic_score: 0.70
+    bin: GREEN
+    reason: Residuo organico claramente visible.
+
+  - id: mixed_organic_requires_check
+    priority: 98
+    when:
+      any_class_in: [mixed_organic]
+      require_additional_view_slots: [close_texture]
+    bin: GREEN
+    reason: Organico mezclado requiere inspeccion de textura y empaque cercano.
+
+  - id: visible_liquid_black
+    priority: 95
+    when:
+      state_liquid_in: [visible, pooled]
+    bin: BLACK
+    reason: Hay liquido visible o remanente.
+
+  - id: heavy_food_residue_black
+    priority: 94
+    when:
+      state_food_residue_in: [visible, heavy]
+    bin: BLACK
+    reason: Hay restos de comida o contaminacion fuerte.
+
+  - id: greasy_cardboard_black
+    priority: 93
+    when:
+      any_class_in: [cardboard, cardboard_box, pizza_box]
+      min_grease_score: 0.55
+    bin: BLACK
+    reason: El carton se ve grasoso o muy contaminado.
+
+  - id: used_napkin_black
+    priority: 92
+    when:
+      any_class_in: [napkin_used]
+    bin: BLACK
+    reason: Las servilletas usadas van a caneca negra.
+
+  - id: dry_clean_recyclable_white
+    priority: 70
+    when:
+      min_clean_score: 0.60
+      max_liquid_score: 0.25
+      max_food_residue_score: 0.30
+      class_not_in: [napkin_used, snack_bag, multilayer_package]
+    bin: WHITE
+    reason: El residuo se ve vacio, limpio y seco.
+
+  - id: drained_tetra_pak_white
+    priority: 69
+    when:
+      any_class_in: [tetra_pak]
+      required_view_slots: [opening_neck, inner_view]
+      max_liquid_score: 0.30
+    bin: WHITE
+    reason: El Tetra Pak parece vacio y drenado.
+
+  - id: multilayer_black
+    priority: 68
+    when:
+      any_class_in: [snack_bag, multilayer_package]
+    bin: BLACK
+    reason: Los empaques multicapa y metalizados van por defecto a caneca negra.
+
+  - id: fallback_black
+    priority: 1
+    when:
+      fallback: true
+    bin: BLACK
+    reason: Falta evidencia suficiente; se usa recomendacion conservadora.
+

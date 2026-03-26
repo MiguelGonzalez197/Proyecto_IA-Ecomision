@@ -1,6 +1,5 @@
 package com.ecomision.ecosort.analysis
 
-import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Color
 import com.ecomision.ecosort.model.DetectionCandidate
@@ -15,10 +14,7 @@ import kotlinx.coroutines.tasks.await
 import kotlin.math.abs
 import kotlin.math.max
 
-class WasteHeuristicClassifier(
-    context: Context
-) {
-    private val appContext = context.applicationContext
+class WasteHeuristicClassifier {
     private val labeler by lazy {
         ImageLabeling.getClient(ImageLabelerOptions.DEFAULT_OPTIONS)
     }
@@ -61,7 +57,7 @@ class WasteHeuristicClassifier(
         val inputImage = InputImage.fromBitmap(bitmap, 0)
         return runCatching {
             labeler.process(inputImage).await()
-                .filter { it.confidence >= 0.45f }
+                .filter { it.confidence >= 0.22f }
                 .map { it.text.lowercase() }
         }.getOrDefault(emptyList())
     }
@@ -81,39 +77,56 @@ class WasteHeuristicClassifier(
 
         score += when (categoryId) {
             "plastic_bottle" -> keywordScore(hints, "bottle", "water", "drink", "beverage") +
-                if (aspectRatio > 1.35f) 0.18f else 0f
+                if (aspectRatio > 1.35f) 0.18f else 0f +
+                if (features.highlightRatio > 0.14f && aspectRatio > 1.10f) 0.12f else 0f
 
-            "plastic_container" -> keywordScore(hints, "container", "box", "cup", "food", "packaged goods")
-            "plastic_bag" -> keywordScore(hints, "bag", "plastic bag", "sack", "package")
+            "plastic_container" -> keywordScore(hints, "container", "box", "cup", "food", "packaged goods") +
+                if (features.highlightRatio > 0.10f && aspectRatio in 0.55f..1.90f) 0.12f else 0f
+
+            "plastic_bag" -> keywordScore(hints, "bag", "plastic bag", "sack", "package") +
+                if (features.highlightRatio > 0.18f || features.whiteRatio > 0.30f) 0.10f else 0f
+
             "paper_sheet" -> keywordScore(hints, "paper", "document", "book", "text", "newspaper", "receipt") +
-                if (features.whiteRatio > 0.35f) 0.12f else 0f
+                if (features.whiteRatio > 0.35f) 0.12f else 0f +
+                if (features.whiteRatio > 0.48f && aspectRatio in 0.55f..2.20f && features.brownRatio < 0.18f) 0.16f else 0f
 
-            "cardboard_box" -> keywordScore(hints, "box", "cardboard", "carton", "package")
+            "cardboard_box" -> keywordScore(hints, "box", "cardboard", "carton", "package") +
+                if (features.brownRatio > 0.16f) 0.18f else 0f +
+                if (aspectRatio in 0.45f..1.90f) 0.08f else 0f
+
             "pizza_box" -> keywordScore(hints, "pizza", "box", "food", "cardboard") +
                 if (features.brownRatio > 0.18f) 0.12f else 0f
 
             "disposable_cup" -> keywordScore(hints, "cup", "drinkware", "glass") +
-                if (aspectRatio in 0.8f..1.7f) 0.12f else 0f
+                if (aspectRatio in 0.8f..1.7f) 0.12f else 0f +
+                if (features.highlightRatio > 0.10f) 0.06f else 0f
 
             "coffee_cup" -> keywordScore(hints, "coffee", "cup", "mug", "drinkware") +
                 if (features.darkRatio > 0.30f) 0.12f else 0f
 
             "can" -> keywordScore(hints, "can", "tin", "beverage", "drink") +
-                if (aspectRatio in 0.8f..1.5f) 0.12f else 0f
+                if (aspectRatio in 0.8f..1.5f) 0.12f else 0f +
+                if (features.highlightRatio > 0.16f) 0.10f else 0f
 
             "glass_jar" -> keywordScore(hints, "jar", "glass", "bottle", "container") +
-                if (features.whiteRatio > 0.20f) 0.08f else 0f
+                if (features.whiteRatio > 0.20f) 0.08f else 0f +
+                if (features.highlightRatio > 0.12f) 0.10f else 0f
 
-            "tetra_pak" -> keywordScore(hints, "carton", "juice", "milk", "drink", "box")
+            "tetra_pak" -> keywordScore(hints, "carton", "juice", "milk", "drink", "box") +
+                if (features.whiteRatio > 0.24f && aspectRatio in 0.85f..2.30f) 0.12f else 0f
+
             "metalized_wrapper" -> keywordScore(hints, "package", "snack", "wrapper", "candy", "packet") +
                 if (features.highlightRatio > 0.18f) 0.12f else 0f
 
             "foam_tray" -> keywordScore(hints, "tray", "plate", "platter") +
                 if (features.whiteRatio > 0.55f) 0.16f else 0f
 
-            "delivery_container" -> keywordScore(hints, "container", "food", "lunch", "box", "plate")
+            "delivery_container" -> keywordScore(hints, "container", "food", "lunch", "box", "plate") +
+                if ((features.whiteRatio > 0.26f || features.brownRatio > 0.18f) && aspectRatio in 0.45f..1.70f) 0.12f else 0f
+
             "napkin" -> keywordScore(hints, "napkin", "tissue", "paper towel", "cloth") +
-                if (features.whiteRatio > 0.50f) 0.10f else 0f
+                if (features.whiteRatio > 0.50f) 0.10f else 0f +
+                if (features.whiteRatio > 0.60f && features.highlightRatio < 0.18f) 0.08f else 0f
 
             "organic_food" -> keywordScore(hints, "food", "fruit", "banana", "apple", "orange", "vegetable", "bread", "plant") +
                 if (features.greenRatio > 0.18f || features.redOrangeRatio > 0.20f) 0.14f else 0f
@@ -126,6 +139,12 @@ class WasteHeuristicClassifier(
             else -> 0f
         }
 
+        if (categoryId == "paper_sheet" && features.brownRatio > 0.22f) {
+            score -= 0.10f
+        }
+        if (categoryId == "cardboard_box" && features.whiteRatio > 0.58f && features.brownRatio < 0.12f) {
+            score -= 0.08f
+        }
         if (categoryId == "organic_food" && hasAny("bottle", "can", "glass", "jar")) {
             score -= 0.18f
         }

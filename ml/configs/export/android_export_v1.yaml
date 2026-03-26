@@ -1,0 +1,19 @@
+version: android-export-v1
+detector:
+  source_checkpoint: ml/reports/runs/detector_v1/weights/best.pt
+  export_format: tflite
+  imgsz: 640
+  int8: true
+  half: false
+  nms: true
+  target_path: ml/exports/android/detector_v1.tflite
+classifier:
+  source_model: ml/reports/models/state_classifier_v1/best_model.keras
+  export_format: tflite
+  quantization: dynamic
+  representative_dataset_csv: ml/data/processed/classifier_v1/calibration.csv
+  target_path: ml/exports/android/state_classifier_v1.tflite
+android_assets:
+  taxonomy_output: app/src/main/assets/waste_catalog.json
+  rules_output: app/src/main/assets/bin_rules.json
+
