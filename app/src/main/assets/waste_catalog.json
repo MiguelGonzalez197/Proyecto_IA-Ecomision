@@ -1,0 +1,155 @@
+[
+  {
+    "id": "plastic_bottle",
+    "displayName": "Botella plastica",
+    "family": "RIGID_PLASTIC",
+    "defaultBin": "WHITE",
+    "requiresViews": ["OUTER_FULL", "INNER_VIEW", "OPENING_NECK", "BOTTOM_VIEW"],
+    "guidanceTags": ["liquid", "cleanliness", "cap", "base"]
+  },
+  {
+    "id": "plastic_container",
+    "displayName": "Envase plastico",
+    "family": "RIGID_PLASTIC",
+    "defaultBin": "WHITE",
+    "requiresViews": ["OUTER_FULL", "INNER_VIEW", "BACK_SIDE"],
+    "guidanceTags": ["food_residue", "grease", "corners"]
+  },
+  {
+    "id": "plastic_bag",
+    "displayName": "Bolsa plastica",
+    "family": "FLEXIBLE_PLASTIC",
+    "defaultBin": "WHITE",
+    "requiresViews": ["OUTER_FULL", "BOTH_FACES", "UNFOLDED_VIEW"],
+    "guidanceTags": ["attached_residue", "background", "wrinkles"]
+  },
+  {
+    "id": "paper_sheet",
+    "displayName": "Papel",
+    "family": "PAPER",
+    "defaultBin": "WHITE",
+    "requiresViews": ["OUTER_FULL", "BOTH_FACES", "CLOSE_TEXTURE"],
+    "guidanceTags": ["humidity", "food_stain"]
+  },
+  {
+    "id": "cardboard_box",
+    "displayName": "Carton",
+    "family": "CARDBOARD",
+    "defaultBin": "WHITE",
+    "requiresViews": ["OUTER_FULL", "BACK_SIDE", "CLOSE_TEXTURE"],
+    "guidanceTags": ["grease", "humidity", "corners"]
+  },
+  {
+    "id": "pizza_box",
+    "displayName": "Caja de pizza",
+    "family": "CARDBOARD",
+    "defaultBin": "WHITE",
+    "requiresViews": ["OUTER_FULL", "INNER_VIEW", "BOTTOM_VIEW"],
+    "guidanceTags": ["cheese", "grease", "food_residue"]
+  },
+  {
+    "id": "disposable_cup",
+    "displayName": "Vaso desechable",
+    "family": "DISPOSABLE_FOODWARE",
+    "defaultBin": "WHITE",
+    "requiresViews": ["OUTER_FULL", "INNER_VIEW", "BOTTOM_VIEW"],
+    "guidanceTags": ["foam", "liquid", "coffee"]
+  },
+  {
+    "id": "coffee_cup",
+    "displayName": "Vaso de cafe",
+    "family": "DISPOSABLE_FOODWARE",
+    "defaultBin": "WHITE",
+    "requiresViews": ["OUTER_FULL", "INNER_VIEW", "BOTTOM_VIEW", "RIM_CLOSEUP"],
+    "guidanceTags": ["foam", "coffee", "sugar", "lid"]
+  },
+  {
+    "id": "can",
+    "displayName": "Lata",
+    "family": "METAL",
+    "defaultBin": "WHITE",
+    "requiresViews": ["OUTER_FULL", "OPENING_NECK", "BOTTOM_VIEW"],
+    "guidanceTags": ["oil", "liquid", "opening"]
+  },
+  {
+    "id": "glass_jar",
+    "displayName": "Frasco de vidrio",
+    "family": "GLASS",
+    "defaultBin": "WHITE",
+    "requiresViews": ["OUTER_FULL", "INNER_VIEW", "OPENING_NECK", "BOTTOM_VIEW"],
+    "guidanceTags": ["liquid", "sticky", "label"]
+  },
+  {
+    "id": "tetra_pak",
+    "displayName": "Tetra Pak",
+    "family": "MULTILAYER",
+    "defaultBin": "WHITE",
+    "requiresViews": ["OUTER_FULL", "OPENING_NECK", "INNER_VIEW"],
+    "guidanceTags": ["drained", "liquid", "folded"]
+  },
+  {
+    "id": "metalized_wrapper",
+    "displayName": "Empaque metalizado",
+    "family": "MULTILAYER",
+    "defaultBin": "BLACK",
+    "requiresViews": ["OUTER_FULL", "INNER_VIEW", "UNFOLDED_VIEW"],
+    "guidanceTags": ["food_residue", "inner_layer"]
+  },
+  {
+    "id": "foam_tray",
+    "displayName": "Bandeja de icopor",
+    "family": "FOAM",
+    "defaultBin": "BLACK",
+    "requiresViews": ["OUTER_FULL", "INNER_VIEW", "BOTTOM_VIEW"],
+    "guidanceTags": ["meat_residue", "sauce", "grease"]
+  },
+  {
+    "id": "delivery_container",
+    "displayName": "Recipiente de domicilio",
+    "family": "DISPOSABLE_FOODWARE",
+    "defaultBin": "WHITE",
+    "requiresViews": ["OUTER_FULL", "INNER_VIEW", "HINGE_VIEW"],
+    "guidanceTags": ["sauce", "grease", "food_residue"]
+  },
+  {
+    "id": "napkin",
+    "displayName": "Servilleta",
+    "family": "SANITARY_PAPER",
+    "defaultBin": "BLACK",
+    "requiresViews": ["OUTER_FULL", "BOTH_FACES", "CLOSE_TEXTURE"],
+    "guidanceTags": ["grease", "food_residue", "humidity"]
+  },
+  {
+    "id": "organic_food",
+    "displayName": "Residuo organico",
+    "family": "ORGANIC",
+    "defaultBin": "GREEN",
+    "requiresViews": ["OUTER_FULL", "CLOSE_TEXTURE"],
+    "guidanceTags": ["texture", "volume", "mix"]
+  },
+  {
+    "id": "aluminum_foil",
+    "displayName": "Papel aluminio",
+    "family": "METAL",
+    "defaultBin": "WHITE",
+    "requiresViews": ["OUTER_FULL", "BOTH_FACES", "CLOSE_TEXTURE"],
+    "guidanceTags": ["oil", "food_residue", "wrinkles"]
+  },
+  {
+    "id": "cutlery",
+    "displayName": "Cubiertos desechables",
+    "family": "DISPOSABLE_FOODWARE",
+    "defaultBin": "WHITE",
+    "requiresViews": ["OUTER_FULL", "BOTH_FACES", "CLOSE_TEXTURE"],
+    "guidanceTags": ["food_residue", "surface"]
+  },
+  {
+    "id": "lid",
+    "displayName": "Tapa",
+    "family": "RIGID_PLASTIC",
+    "defaultBin": "WHITE",
+    "requiresViews": ["OUTER_FULL", "BOTH_FACES"],
+    "guidanceTags": ["sticky", "inside"]
+  }
+]
+
