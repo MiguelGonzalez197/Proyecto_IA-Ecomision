@@ -30,15 +30,18 @@ class CatalogRepositoryImpl(
 ) : CatalogRepository {
 
     private val seedMutex = Mutex()
+    @Volatile
+    private var catalogSynced = false
 
     override suspend fun seedIfNeeded() {
         seedMutex.withLock {
-            if (categoryDao.count() > 0 && ruleDao.count() > 0) return
+            if (catalogSynced && categoryDao.count() > 0 && ruleDao.count() > 0) return
 
             val categories = parseCategories("waste_catalog.json")
             val rules = parseRules("bin_rules.json")
             categoryDao.insertAll(categories)
             ruleDao.insertAll(rules)
+            catalogSynced = true
         }
     }
 
@@ -128,4 +131,3 @@ private fun parseStringArray(rawJson: String): List<String> {
         }
     }
 }
-

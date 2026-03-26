@@ -461,5 +461,22 @@
       "coffee_residue",
       "local_policy"
     ]
+  },
+  {
+    "id": "common_waste",
+    "displayName": "Residuo comun",
+    "family": "UNKNOWN",
+    "defaultBin": "BLACK",
+    "requiresViews": [
+      "OUTER_FULL",
+      "SEPARATED_BACKGROUND",
+      "CLOSE_TEXTURE"
+    ],
+    "guidanceTags": [
+      "deformed_object",
+      "dirty_surface",
+      "partial_view",
+      "real_world_residue"
+    ]
   }
 ]

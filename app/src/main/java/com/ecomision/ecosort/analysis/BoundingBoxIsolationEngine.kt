@@ -12,7 +12,7 @@ data class IsolatedObject(
 
 class BoundingBoxIsolationEngine {
 
-    fun isolate(source: Bitmap, boundingBox: RectF, paddingRatio: Float = 0.12f): IsolatedObject {
+    fun isolate(source: Bitmap, boundingBox: RectF, paddingRatio: Float = 0.18f): IsolatedObject {
         val padX = boundingBox.width() * paddingRatio
         val padY = boundingBox.height() * paddingRatio
 
@@ -30,4 +30,3 @@ class BoundingBoxIsolationEngine {
         )
     }
 }
-

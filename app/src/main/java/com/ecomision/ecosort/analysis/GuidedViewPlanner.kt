@@ -4,6 +4,7 @@ import com.ecomision.ecosort.model.EvidenceSlot
 import com.ecomision.ecosort.model.GuidedViewInstruction
 import com.ecomision.ecosort.model.ScanSession
 import com.ecomision.ecosort.model.WasteCategory
+import com.ecomision.ecosort.model.WasteFamily
 
 class GuidedViewPlanner {
 
@@ -33,9 +34,12 @@ class GuidedViewPlanner {
     }
 
     private fun fallbackSlotFor(category: WasteCategory?): EvidenceSlot {
-        return when (category?.id) {
-            "organic_food" -> EvidenceSlot.CLOSE_TEXTURE
-            "plastic_bag", "metalized_wrapper" -> EvidenceSlot.BOTH_FACES
+        return when {
+            category?.family == WasteFamily.ORGANIC -> EvidenceSlot.CLOSE_TEXTURE
+            category?.id in setOf("plastic_bag", "snack_bag", "multilayer_package") -> EvidenceSlot.UNFOLDED_VIEW
+            category?.family in setOf(WasteFamily.PAPER, WasteFamily.CARDBOARD, WasteFamily.SANITARY_PAPER) -> EvidenceSlot.BOTH_FACES
+            category?.family == WasteFamily.METAL -> EvidenceSlot.OPENING_NECK
+            category?.family == WasteFamily.UNKNOWN -> EvidenceSlot.SEPARATED_BACKGROUND
             else -> EvidenceSlot.INNER_VIEW
         }
     }
@@ -47,19 +51,19 @@ class GuidedViewPlanner {
         val categoryName = category?.displayName ?: "objeto"
         return when (slot) {
             EvidenceSlot.INNER_VIEW -> when (category?.id) {
-                "coffee_cup", "disposable_cup" -> GuidedViewInstruction(
+                "coffee_cup", "plastic_cup", "yogurt_cup" -> GuidedViewInstruction(
                     slot = slot,
                     title = "Muestra el interior del vaso",
                     description = "Inclina el vaso y acerca la camara al borde para verificar espuma, cafe o residuos adheridos."
                 )
 
-                "plastic_bottle", "glass_jar", "tetra_pak" -> GuidedViewInstruction(
+                "plastic_bottle", "glass_bottle", "glass_jar", "tetra_pak" -> GuidedViewInstruction(
                     slot = slot,
                     title = "Muestra el interior del envase",
                     description = "Gira lentamente el envase y deja ver si quedan liquidos, gotas o residuos viscosos."
                 )
 
-                "delivery_container", "plastic_container", "foam_tray" -> GuidedViewInstruction(
+                "delivery_container", "plastic_container", "ice_cream_tub", "foam_tray", "cardboard_box" -> GuidedViewInstruction(
                     slot = slot,
                     title = "Muestra la parte interna",
                     description = "Abre el recipiente y acerca la camara a esquinas y fondo para revisar salsa, grasa o comida."
@@ -99,13 +103,13 @@ class GuidedViewPlanner {
             )
 
             EvidenceSlot.BOTH_FACES -> when (category?.id) {
-                "plastic_bag" -> GuidedViewInstruction(
+                "plastic_bag", "snack_bag", "multilayer_package" -> GuidedViewInstruction(
                     slot = slot,
                     title = "Extiende la bolsa",
                     description = "Muestra ambas caras de la bolsa y separala del fondo para detectar residuos adheridos."
                 )
 
-                "napkin", "paper_sheet" -> GuidedViewInstruction(
+                "napkin_clean", "napkin_used", "paper_sheet", "newspaper", "notebook", "cardboard" -> GuidedViewInstruction(
                     slot = slot,
                     title = "Muestra ambas caras",
                     description = "Gira el material y ensena las dos caras para validar manchas, humedad o uso."
@@ -125,7 +129,7 @@ class GuidedViewPlanner {
             )
 
             EvidenceSlot.CLOSE_TEXTURE -> when (category?.id) {
-                "organic_food" -> GuidedViewInstruction(
+                "fruit_peel", "vegetable_scraps", "mixed_organic", "bone", "coffee_filter" -> GuidedViewInstruction(
                     slot = slot,
                     title = "Acerca la textura",
                     description = "Muestra la textura y el volumen completo del residuo organico, separado de otros objetos."

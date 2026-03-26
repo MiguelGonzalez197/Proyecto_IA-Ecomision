@@ -1,5 +1,6 @@
 package com.ecomision.ecosort.camera
 
+import android.util.Log
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
 import kotlinx.coroutines.CoroutineScope
@@ -36,7 +37,20 @@ class CameraFrameAnalyzer(
                 withContext(Dispatchers.Main) {
                     onResult(snapshot)
                 }
-            } catch (_: Throwable) {
+            } catch (throwable: Throwable) {
+                Log.e(TAG, "Frame analysis failed.", throwable)
+                withContext(Dispatchers.Main) {
+                    onResult(
+                        FrameAnalysisSnapshot(
+                            imageWidth = imageProxy.width,
+                            imageHeight = imageProxy.height,
+                            detections = emptyList(),
+                            bitmap = null,
+                            timestampMs = System.currentTimeMillis(),
+                            sceneHint = "No pude analizar este frame. Si no ves contornos, toca directamente el residuo."
+                        )
+                    )
+                }
             } finally {
                 processing = false
                 imageProxy.close()
@@ -46,5 +60,9 @@ class CameraFrameAnalyzer(
 
     fun shutdown() {
         scope.cancel()
+    }
+
+    private companion object {
+        const val TAG = "CameraFrameAnalyzer"
     }
 }

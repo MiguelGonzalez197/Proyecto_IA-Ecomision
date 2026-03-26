@@ -90,10 +90,15 @@ class ScannerViewModel(
         if (refreshedSelected != null) {
             rememberSelection(refreshedSelected)
         }
+        val visibleDetections = when {
+            snapshot.detections.isNotEmpty() -> snapshot.detections
+            currentState.selectedCandidateId != null && selectedCandidate?.id == currentState.selectedCandidateId -> listOfNotNull(selectedCandidate)
+            else -> emptyList()
+        }
 
         _uiState.update { state ->
             state.copy(
-                detections = snapshot.detections,
+                detections = visibleDetections,
                 imageWidth = snapshot.imageWidth,
                 imageHeight = snapshot.imageHeight,
                 selectedCandidateId = refreshedSelected?.id ?: state.selectedCandidateId,
@@ -104,13 +109,13 @@ class ScannerViewModel(
                     state.selectedCandidateId != null && refreshedSelected == null ->
                         "Ajusta el encuadre y vuelve a tocar el objeto para clasificarlo."
 
-                    snapshot.detections.isNotEmpty() && state.currentInstruction != null ->
+                    visibleDetections.isNotEmpty() && state.currentInstruction != null ->
                         "Ajusta la vista si quieres afinar el resultado o toca otro objeto."
 
-                    snapshot.detections.isNotEmpty() && state.currentResult != null ->
+                    visibleDetections.isNotEmpty() && state.currentResult != null ->
                         "Toca otro objeto destacado para clasificarlo."
 
-                    snapshot.detections.isNotEmpty() ->
+                    visibleDetections.isNotEmpty() ->
                         "Toca uno de los objetos marcados para clasificarlo."
 
                     else ->
@@ -311,12 +316,26 @@ class ScannerViewModel(
 
     private fun resolveCandidateForAnalysis(): DetectionCandidate? {
         val selectedId = _uiState.value.selectedCandidateId ?: selectedCandidate?.id ?: return null
-        val liveCandidate = resolveSelectedCandidate(selectedId, latestDetections) ?: return null
-        rememberSelection(liveCandidate)
-        if (_uiState.value.selectedCandidateId != liveCandidate.id) {
-            _uiState.update { it.copy(selectedCandidateId = liveCandidate.id) }
+        val liveCandidate = resolveSelectedCandidate(selectedId, latestDetections)
+        if (liveCandidate != null) {
+            rememberSelection(liveCandidate)
+            if (_uiState.value.selectedCandidateId != liveCandidate.id) {
+                _uiState.update { it.copy(selectedCandidateId = liveCandidate.id) }
+            }
+            return liveCandidate
         }
-        return liveCandidate
+        return selectedCandidate?.let { candidate ->
+            latestFrameBitmap?.let { bitmap ->
+                candidate.copy(
+                    boundingBox = RectF(
+                        candidate.boundingBox.left.coerceIn(0f, bitmap.width.toFloat()),
+                        candidate.boundingBox.top.coerceIn(0f, bitmap.height.toFloat()),
+                        candidate.boundingBox.right.coerceIn(0f, bitmap.width.toFloat()),
+                        candidate.boundingBox.bottom.coerceIn(0f, bitmap.height.toFloat())
+                    )
+                )
+            }
+        }
     }
 
     private fun resolveSelectedCandidate(
@@ -365,7 +384,7 @@ class ScannerViewModel(
     private fun buildIdleStatusMessage(
         sceneHint: String? = null
     ): String {
-        return sceneHint ?: "Apunta la camara hacia un residuo."
+        return sceneHint ?: "Apunta la camara hacia un residuo o toca directamente el area que quieras analizar."
     }
 
     private suspend fun getCatalog(): List<WasteCategory> {

@@ -71,7 +71,7 @@ fun DetectionOverlay(
             )
         }
     }
-    val tapModifier = if (interactionEnabled && detections.isNotEmpty() && imageWidth > 0 && imageHeight > 0) {
+    val tapModifier = if (interactionEnabled && imageWidth > 0 && imageHeight > 0) {
         Modifier.pointerInput(detections, overlaySize, imageWidth, imageHeight) {
             detectTapGestures { tap ->
                 val candidate = PreviewCoordinateMapper.hitTest(

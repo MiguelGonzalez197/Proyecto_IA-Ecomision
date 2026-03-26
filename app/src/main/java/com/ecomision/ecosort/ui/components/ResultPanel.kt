@@ -128,7 +128,7 @@ fun ResultPanel(
                 EcoDivider()
                 HelperCard(
                     title = "Esperando residuos en escena",
-                    description = "Cuando aparezca un objeto claro, la app marcara el contorno y te dejara tocarlo directamente."
+                    description = "Cuando aparezca un objeto claro, la app marcara el contorno. Si no ves cajas aun, toca directamente el residuo y probare una clasificacion manual."
                 )
             }
 
